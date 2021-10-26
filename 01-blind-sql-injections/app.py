@@ -38,7 +38,7 @@ h1 {
 LOGIN_FORM = """
     <form action="/" method="post">
         <input type="text" name="username" placeholder="Username">
-        <input type="password" name="password" placeholder="Password">
+        <input type="text" name="password" placeholder="Password">
         <input type="submit" value="Login">
     </form>
 """
@@ -75,7 +75,7 @@ def index():
 
         admin_pass = session.get('admin_pass')
         if admin_pass is None:
-            admin_pass = os.getrandom(16).hex()
+            admin_pass = "435e8bfc7905d7e5c18fffd4ba4ea519" # don't use random password to run and macOS and be predictable
             session['admin_pass'] = admin_pass
 
         db = sqlite3.connect(":memory:", isolation_level=None)
