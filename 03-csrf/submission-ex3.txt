@@ -1,0 +1,16 @@
+Schritt 1:
+Create an account
+
+Schritt 2:
+Man kopiert seine user-id aus der URL-Bar, z.B. dcc14ef8-f9b8-4b18-898c-2b1b7f3b67ee
+
+Schritt 3:
+Man klickt auf "edit profile" und ändert seine Profilbild-URL auf so etwas wie http://itsec.sec.in.tum.de:7014/set-grade?user=dcc14ef8-f9b8-4b18-898c-2b1b7f3b67ee&grade=1.0
+Auf jeden Fall is'es wichtig, dass man seine user-id nimmt und 1.0 als Note einsetzt, weil sonst der python Server "/bin/flag" nicht ausführt, bzw. wenn er das bei einer anderen Profile-Page macht, auf die ich keinen Zugriff habe bringt mir das nichts.
+
+Schritt 4:
+Man schickt eine herzerwärmende Nachricht an den admin über die complaint Funktion, sodass er sich hoffentlich noch einmal mit unserer schlechten Note befasst.
+Wenn der admin dann unser Profil aufruft (wovon wir jetzt einfach mal ausgehen), dann sieht er, dass wir scheinbar sau schlecht sind und beschließt, dass er nichts weiter für uns tun kann.
+Zu diesem Zeitpunkt ist es aber leider schon zu spät, da sein Chromium Browser versucht hat die Image Resource für unser Profilbild laden will.
+Was Chromium zu diesem Zeitpunkt natürlich noch nicht weiß ist, dass dort gar keine Image Resource liegt. Da die set-grade Funktion auch über HTTP-GET funktioniert ist es kein Problem, dass diese ausgeführt wird.
+Da der admin noch eingeloggt ist und der session-Cookie auch bei der Anfrage für das Bild an itsec.sec.in.tum.de:7014 geschickt wird, ist er gegenüber dem Server authentifiziert und kann die set-grade Aktion ausführen.
