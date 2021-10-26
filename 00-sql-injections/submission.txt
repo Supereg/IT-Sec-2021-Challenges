@@ -1,0 +1,5 @@
+Search Input:
+UNION ALL SELECT * FROM tumoogleplus_users --
+
+Da der web service immer die dritte Spalte des href attributes des <a> tags packt, muss man zusätzlich in den
+source code der website schauen.
