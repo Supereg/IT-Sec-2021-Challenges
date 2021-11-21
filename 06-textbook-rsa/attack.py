@@ -3,6 +3,7 @@
 # We have the encrypted flag C=RSA_e(M) with M="flag{...}".
 #
 # According to https://www.uni-weimar.de/fileadmin/user/fak/medien/professuren/Mediensicherheit/Teaching/WS1516/Kryptographie__Mosbach_/krypto08.pdf
+# (this is also explained in http://archiv.infsec.ethz.ch/education/fs08/secsem/bleichenbacher98.pdf; linked in task 07)
 # we can construct a M'=(M*r) mod N (with r \in Z_N) by just knowing C
 # C'=RSA_e(M') is constructed as follows:
 #   =(r * M)^e mod N
