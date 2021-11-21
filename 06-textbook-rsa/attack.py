@@ -1,9 +1,3 @@
-import socket
-import math
-from Crypto.Util.number import *
-import telnetlib
-
-
 # We know that the server uses textbook rsa.
 # We know that the server will decrypt anything we send them as long as it doesn't start with "flag"
 # We have the encrypted flag C=RSA_e(M) with M="flag{...}".
