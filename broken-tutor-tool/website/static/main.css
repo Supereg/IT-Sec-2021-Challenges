@@ -1,0 +1,37 @@
+main {
+	max-width: 700px;
+	margin-right: auto;
+	margin-left: auto;
+	padding: 10px;
+	margin-top: 20px;
+}
+
+.inputbox {
+	border: 1px solid rgb(207, 217, 222);
+	border-radius: 3px;
+	padding: 2px 5px;
+	margin-bottom: 10px;
+	margin-top: 10px;
+}
+
+.inputbox input {
+	border: 0;
+	outline-style: none;
+	appearance: none;
+	background-color: #fff;
+}
+
+
+.inputbox label {
+	color: rgb(83, 100, 113);
+	font-size: 0.9rem;
+}
+input {
+	display: block;
+	margin-bottom: 5px;
+	width: 100%;
+}
+
+.inputbox input:valid::before {
+	background-color: green;
+}
