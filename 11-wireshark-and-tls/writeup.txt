@@ -1,0 +1,8 @@
+1.: capture.pcap in Wireshark öffnen
+2.: dankenswerterweise feststellen, dass in Frame 4 und 8 der Client beim Server einen server.pem RSA Private Key angefragt und sogar bekommen hat.Den Inhalt der Antwort über das Kontextmenü "Kopieren > Als druckbaren Text" kopieren und in einer Datei speichern. Vielleicht brauchen wir das später noch.
+
+3.: sich freuen, dass in Frame 18 Cipher Suite: TLS_RSA_WITH_AES_256_GCM_SHA384 (0x009d) steht und dass da kein Diffie Hellman vorkommt...
+4.: Mit Rechtsklick auf die TLS Überschrift in Detailsfenster über "Protokolleinstellungen > RSA keys list" das server.pem File aus Schritt 2 als RSA Key hinzufügen
+5.: Mit Rechtsklick über einem Frame mit dem Protokoll TLS1.2 über "Folgen > TLS Stream" ein Fenster aufrufen in welchem Wireshark mit dem Private Key aus Schritt 2 uns den entschlüsselten Verbindungsablauf präsentiert.
+6.: Flag kopieren
+7.: Profit
