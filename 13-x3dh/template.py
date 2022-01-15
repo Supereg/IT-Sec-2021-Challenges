@@ -5,6 +5,7 @@ import string
 import sys
 import typing
 import xeddsa
+import binascii
 
 # https://www.signal.org/docs/specifications/x3dh/
 
@@ -18,6 +19,7 @@ class server_api:
         self._name = 'Alice' # Your name is always Alice, don't change this...
 
     def _request(self, operation: str, args: typing.Any) -> str:
+        print("Doing {} with {}".format(operation, args))
         self._sf.write((json.dumps({ 'op': operation, 'args': args }) + '\n').encode())
         return self._sf.readline().decode().strip()
 
@@ -65,22 +67,45 @@ def generate_key():
     # TODO: Return a valid pair of public and private keys. You can then reuse this function below!
     #       We don't check this function, but you'll probably need to use this in multiple places!
     # return public_key, private_key
+    priv = xeddsa.implementations.XEdDSA25519.generate_mont_priv()
+    pub = xeddsa.implementations.XEdDSA25519.mont_pub_from_mont_priv(priv)
+    return pub, priv
+
+def getFirstHex(otk):
+    return (otk[0]).hex()
 
 def publish_keys(server_api: server_api) -> None:
     # TODO: You need to generate your own keys and publish them to the server here!
     #       Make sure to generate enough OTKs (at least NUM_OTKS)
-    # server_api.publish_keys(...)
+    # server_api.publish_keys(ik: str, spk: str, sig: str, otks: typing.List[str])
+
+    (IK_B, IK_B_priv) = generate_key()
+    IK = xeddsa.implementations.XEdDSA25519(IK_B_priv, IK_B)
+    (SPK_B, SPk_B_priv) = generate_key()
+    sig = IK.sign(SPK_B)
+
+    otks = []
+    for i in range(NUM_OTKS):
+        otks.append(generate_key())
+    
+    otks_strs = list(map(getFirstHex, otks))
+
+    server_api.publish_keys(ik = IK_B.hex(), spk = SPK_B.hex(), sig = sig.hex(), otks = otks_strs)
+
+    return None
 
 def send_message_to(server_api: server_api, user: str, message: str) -> None:
     # TODO: Send the specified message to the specified user. If someone messed with the key bundle,
     #       raise a ValidationError (`raise ValidationError()`).
     # server_api.send_message(...)
+    return None
 
 def receive_message(server_api: server_api) -> str:
     incoming = server_api.handle_incoming_request()
     # TODO: Process the incoming message, then decode and return the decrypted ciphertext.
     #       If you cannot validate that the message really is from the user it claims to be from,
     #       raise a ValidationError (`raise ValidationError()`).
+    return ""
 
 # You don't need to change anything below here - this code just repeatedly sends and receives
 # messages. Maybe you want to add some calls to print() for more logging though...
