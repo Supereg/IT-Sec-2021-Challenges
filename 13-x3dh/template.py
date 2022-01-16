@@ -6,6 +6,7 @@ import sys
 import typing
 import xeddsa
 import binascii
+import os
 
 # https://cryptography.io/en/latest/hazmat/primitives/asymmetric/x25519/
 
@@ -13,6 +14,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 # https://www.signal.org/docs/specifications/x3dh/
@@ -132,9 +135,6 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
     SIG_admin_str = PK_bundle["sig"]
     OTK_admin_str = PK_bundle["otk"]
 
-    # TODO: generate EK ?!
-    (EK_priv, EK) = generate_key()
-
     # Verify Signature
     IK_obj = xeddsa.implementations.XEdDSA25519(mont_pub = bytes.fromhex(IK_admin_str))
 
@@ -142,6 +142,9 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
         print("Successfully verified {}'s signature".format(user))
     else:
         raise ValidationError()
+
+    # TODO: generate EK ?!
+    (EK_priv, EK) = generate_key()
 
     X25519_SPK_admin = x25519.X25519PublicKey.from_public_bytes(bytes.fromhex(SPK_admin_str))
     X25519_IK_B_priv = x25519.X25519PrivateKey.from_private_bytes(IK_B_priv)
@@ -163,14 +166,47 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
     print("Concatenated DH Keys")
     print(all_DHs.hex())
 
+    # according to spec prepend a F with 32 0xFF bytes for X25519
+    F_X25519 = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
+
     derived_SK = HKDF(
         algorithm=hashes.SHA256(),
         length=32,
         salt=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
         info=b'itsec@tum'
-    ).derive(all_DHs)
+    ).derive(F_X25519 + all_DHs)
 
     print("derived SK: {}".format(derived_SK.hex()))
+
+    # Phase 2b
+
+    # Derive Assiciated Data
+
+    AD = IK_B + bytes.fromhex(IK_admin_str)
+
+
+    aesgcm = AESGCM(derived_SK)
+
+    nonce = os.urandom(12)
+    # TODO: check this line. Maybe the `+AD` is bullshit
+    ct_raw = aesgcm.encrypt(nonce, bytes(message, "utf-8"), AD)
+
+    print("ct_raw = {}".format(ct_raw.hex()))
+
+    ct = ct_raw[:-16]
+    tag = ct_raw[-16:]
+
+    print("ct = {}".format(ct.hex()))
+    print("tag = {}".format(tag.hex()))
+
+    print(aesgcm.decrypt(nonce, ct_raw, AD))
+
+    # msg = IK_B + EK + ct + bytes.fromhex(SPK_admin_str) + bytes.fromhex(OTK_admin_str)
+    # print("msg = {}".format(msg.hex()))
+
+    # send_message(self, user: str, your_ik: str, your_ek: str, which_prekey_bundle: int, nonce: str, ciphertext: str, tag: str)
+    server_api.send_message(user = user, your_ik = IK_B.hex(), your_ek =  EK.hex(), which_prekey_bundle = PK_bundle["bundle"], 
+                                nonce = nonce.hex(), ciphertext = ct.hex(), tag = tag.hex())
 
     return None
 
