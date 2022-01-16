@@ -184,12 +184,11 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
 
     AD = IK_B + bytes.fromhex(IK_admin_str)
 
-
     aesgcm = AESGCM(derived_SK)
 
-    nonce = os.urandom(12)
+    nonce = os.urandom(24)
     # TODO: check this line. Maybe the `+AD` is bullshit
-    ct_raw = aesgcm.encrypt(nonce, bytes(message, "utf-8"), AD)
+    ct_raw = aesgcm.encrypt(nonce, bytes(message, "utf-8"), bytes(AD.hex(), "utf-8"))
 
     print("ct_raw = {}".format(ct_raw.hex()))
 
@@ -199,7 +198,7 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
     print("ct = {}".format(ct.hex()))
     print("tag = {}".format(tag.hex()))
 
-    print(aesgcm.decrypt(nonce, ct_raw, AD))
+    print(aesgcm.decrypt(nonce, ct_raw, bytes(AD.hex(), "utf-8")))
 
     # msg = IK_B + EK + ct + bytes.fromhex(SPK_admin_str) + bytes.fromhex(OTK_admin_str)
     # print("msg = {}".format(msg.hex()))
