@@ -7,6 +7,14 @@ import typing
 import xeddsa
 import binascii
 
+# https://cryptography.io/en/latest/hazmat/primitives/asymmetric/x25519/
+
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import x25519
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+
 # https://www.signal.org/docs/specifications/x3dh/
 
 NUM_OTKS = 64 # How many OTKs you need to publish (at least!)
@@ -79,18 +87,31 @@ def publish_keys(server_api: server_api) -> None:
     #       Make sure to generate enough OTKs (at least NUM_OTKS)
     # server_api.publish_keys(ik: str, spk: str, sig: str, otks: typing.List[str])
 
+    # First generate a identity key pair
+    global IK_B
+    global IK_B_priv
     (IK_B, IK_B_priv) = generate_key()
+
+    # and now use that for key material to init a XEdDSA25519 Object, in order to use the signing function
     IK = xeddsa.implementations.XEdDSA25519(IK_B_priv, IK_B)
-    (SPK_B, SPk_B_priv) = generate_key()
+
+    # generate the SPK pair
+    global SPK_B
+    global SPK_B_priv
+    (SPK_B, SPK_B_priv) = generate_key()
+
+    # and now sign that public SPK with the private IK_B_priv using the IK object we initialized above
     sig = IK.sign(SPK_B)
 
+    # Generate a bunch of these One-time PreKeys...
     otks = []
     for i in range(NUM_OTKS):
         otks.append(generate_key())
     
+    # ...and map their public keys to a hexed string list for publishing
     otks_strs = list(map(getFirstHex, otks))
 
-    server_api.publish_keys(ik = IK_B.hex(), spk = SPK_B.hex(), sig = sig.hex(), otks = otks_strs)
+    server_api.publish_keys(ik = IK_B.hex(), spk = SPK_B.hex(), sig = sig.hex(), otks = otks_strs)   
 
     return None
 
@@ -98,6 +119,59 @@ def send_message_to(server_api: server_api, user: str, message: str) -> None:
     # TODO: Send the specified message to the specified user. If someone messed with the key bundle,
     #       raise a ValidationError (`raise ValidationError()`).
     # server_api.send_message(...)
+
+    # Fetch Prekey bundle from server for `user`
+    PK_bundle = server_api.fetch_prekey_bundle(user)
+
+    print("PK bundle for user {}:".format(user))
+    print(PK_bundle)
+
+    # Unpack bundle
+    IK_admin_str = PK_bundle["ik"]
+    SPK_admin_str = PK_bundle["spk"]
+    SIG_admin_str = PK_bundle["sig"]
+    OTK_admin_str = PK_bundle["otk"]
+
+    # TODO: generate EK ?!
+    (EK_priv, EK) = generate_key()
+
+    # Verify Signature
+    IK_obj = xeddsa.implementations.XEdDSA25519(mont_pub = bytes.fromhex(IK_admin_str))
+
+    if IK_obj.verify(bytes.fromhex(SPK_admin_str), bytes.fromhex(SIG_admin_str)):
+        print("Successfully verified {}'s signature".format(user))
+    else:
+        raise ValidationError()
+
+    X25519_SPK_admin = x25519.X25519PublicKey.from_public_bytes(bytes.fromhex(SPK_admin_str))
+    X25519_IK_B_priv = x25519.X25519PrivateKey.from_private_bytes(IK_B_priv)
+
+    shared_DH_1 = X25519_IK_B_priv.exchange(X25519_SPK_admin)
+
+    X25519_EK_priv = x25519.X25519PrivateKey.from_private_bytes(EK_priv)
+    X25519_IK_admin = x25519.X25519PublicKey.from_public_bytes(bytes.fromhex(IK_admin_str))
+
+    shared_DH_2 = X25519_EK_priv.exchange(X25519_IK_admin)
+    shared_DH_3 = X25519_EK_priv.exchange(X25519_SPK_admin)
+
+    X25519_OTK_admin= x25519.X25519PublicKey.from_public_bytes(bytes.fromhex(OTK_admin_str))
+
+    shared_DH_4 = X25519_EK_priv.exchange(X25519_OTK_admin)
+
+    all_DHs = shared_DH_1 + shared_DH_2 + shared_DH_3 + shared_DH_4
+
+    print("Concatenated DH Keys")
+    print(all_DHs.hex())
+
+    derived_SK = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        info=b'itsec@tum'
+    ).derive(all_DHs)
+
+    print("derived SK: {}".format(derived_SK.hex()))
+
     return None
 
 def receive_message(server_api: server_api) -> str:
