@@ -1,0 +1,36 @@
+0x7ffdb0df7090:	0x00000000	0x00000000	0x00000000	0x00000000
+                ^-----------------input_buf-------------------
+0x7ffdb0df70a0:	0x004012b0	0x00000000	0x00000078	0x00000000
+                ---------^              ^---------n----------^
+0x7ffdb0df70b0:	0x022cf2a0	0x00000000	0x00000000	0xff000000
+                ^-------line---------^  ^--ret---^    ^^-len
+0x7ffdb0df70c0:	0x004012b0	0x00000000	0x4c767d0a	0x00007f4d
+0x7ffdb0df70d0:	0xb0df71b8	0x00007ffd	0x00000000	0x00000001
+0x7ffdb0df70e0:	0x0040117e	0x00000000	0x4c7677cf	0x00007f4d
+0x7ffdb0df70f0:	0x00000000	0x00000000	0x6d847a9d	0xb11aa377
+0x7ffdb0df7100:	0x00401090	0x00000000
+
+(gdb) p ret
+$1 = 0
+(gdb) p &ret
+$2 = (int *) 0x7ffdb0df70b8
+
+(gdb) p input_buf
+$3 = '\000' <repeats 16 times>, "\260\022@"
+(gdb) p &input_buf
+$4 = (char (*)[20]) 0x7ffdb0df7090
+
+(gdb) p len
+$5 = 255 '\377'
+(gdb) p &len
+$6 = (unsigned char *) 0x7ffdb0df70bf "\377\260\022@"
+
+(gdb) p n
+$7 = 120
+(gdb) p &n
+$8 = (size_t *) 0x7ffdb0df70a8
+
+(gdb) p line
+$9 = 0x22cf2a0 "-1\n"
+(gdb) p &line
+$10 = (char **) 0x7ffdb0df70b0
