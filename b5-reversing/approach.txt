@@ -1,0 +1,22 @@
+Leeet's go.
+
+First of all, I navigated to the puzzle entry. Before I enter the decompiler I just wanted to play around.
+Seeing the puzzle thingy I thought about just doing some trial and error. Which honestly worked pretty well,
+as the correct path isn't really complicated as the pattern was pretty straight forward (and you can easily retry).
+Took a bit to find the first plate, but then any next plate was either just forward, or you could try 3 different
+directions or exclude a lot of possibilities based on the position (e.g. when it would collide with the existing path or the wall).
+Final solution was: ENTRY second from left -> 9x UP -> 3x RIGHT -> 4x DOWN -> 1x LEFT -> 3x DOWN -> 5x RIGHT -> 5x UP
+-> 2x LEFT -> 2x UP viola.
+
+I was like, eZ. Though then I saw those levers :(((
+This was the time to open a decompiler then :/
+
+So, as I'm a Windows noob (I needed to borrow a Windows laptop from a friend as I'm only rocking a macOS machine)
+I have honestly no idea how to decompile this stuff. So I just downloaded dotPeek and failed horribly as I
+tried to open the .exe file at first LOL. At some point i unpacked the `.pck` file (using GodotPckTool1) and opened the contents
+inside dotPeek and found the `LeverRoom` class. At this point I also found the path from above in the code.
+Counting the amount of levers (there are 32) I already suspected to search for an uint32 encoding the lever pattern
+bit by bit. And searching for accesses to `previousChecksum` I found the `_Process(float delta)` method
+and something which suspiciously looks like our lever pattern: 38591049.
+Encoded as binary: 10010011001101101001001001. Looking at the code lever state `down` represents `1`.
+So going from right to left, turning the levers respectively opened the door, and we receive the flag :)
