@@ -237,8 +237,8 @@ def unwrap_content(value1, value2, length=0x1c):
 unwrapped_content, xor_parameters = unwrap_content(var1, var2)
 unwrapped_content_bytes = bytearray(unwrapped_content)
 xor_parameters_bytes = bytearray(xor_parameters)
-print(f"unwrapped_content: {unwrapped_content_bytes.hex()}")
-print(f"xor_parameters: {xor_parameters_bytes.hex()}")
+print(f"unwrapped_content: \t{unwrapped_content_bytes.hex()}")
+print(f"xor_parameters: \t{xor_parameters_bytes.hex()}")
 
 # Looking into the `SaveManager` source we can get to the type of the unwrapped_content:
 # struct SavedData { // 28b
@@ -264,7 +264,7 @@ manaRegen{}
     struct.unpack_from("f", unwrapped_content_bytes, 0x00),
     struct.unpack_from("i", unwrapped_content_bytes, 0x04),
     struct.unpack_from("i", unwrapped_content_bytes, 0x08),
-    struct.unpack_from("i", unwrapped_content_bytes, 0x0c), # gold
+    struct.unpack_from("i", unwrapped_content_bytes, 0x0c),
     struct.unpack_from("i", unwrapped_content_bytes, 0x10),
     struct.unpack_from("i", unwrapped_content_bytes, 0x14),
     struct.unpack_from("i", unwrapped_content_bytes, 0x18),
@@ -283,15 +283,15 @@ struct.pack_into("i", unwrapped_content_bytes, 0x0c, 13371337)
 print(f"previous:\t{bytearray(unwrapped_content).hex()}")
 print(f"now: \t\t{unwrapped_content_bytes.hex()}")
 
+# Computed the new hash
+modified_hash = hashlib.md5(unwrapped_content_bytes).digest()
+print(f"new hash: \t{modified_hash.hex()}")
+
 # compute the new, wrapped content field
 wrapped_content = []
 for i in range(0x1c):
-    wrapped_content.append(unwrapped_content[i] ^ xor_parameters[i])
+    wrapped_content.append(unwrapped_content_bytes[i] ^ xor_parameters[i])
 wrapped_content_bytes = bytearray(wrapped_content)
-
-# Computed the new hash
-modified_hash = hashlib.md5(wrapped_content_bytes).digest()
-print(f"new hash: \t{modified_hash.hex()}")
 
 # write out the modified save game
 with open("./modified_savegame", "wb") as modified_savegame:
