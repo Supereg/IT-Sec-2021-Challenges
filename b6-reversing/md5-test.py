@@ -25,8 +25,6 @@ print(md5sum.hex())
 
 tmp_buf = bytearray(272)
 # those two vars basically map to the last 8 (+2) bytes in the buffer above!
-var1 = 0
-var2 = 0
 
 
 def process_header(length=0x20):
@@ -38,9 +36,9 @@ def process_header(length=0x20):
     last_j = 0
     for j in range(0x100):
         value = tmp_buf[j]
-        new_index = (header[j % length] + value + last_j) & 0xFF
+        last_j = (header[j % length] + value + last_j) & 0xFF
 
-        tmp_buf[j] = tmp_buf[new_index]
+        tmp_buf[j] = tmp_buf[last_j]
         tmp_buf[last_j] = value
 
     var1 = 0
@@ -48,8 +46,10 @@ def process_header(length=0x20):
 
     print(tmp_buf.hex())
 
+    return (var1, var2)
 
-process_header()
+
+var1, var2 = process_header()
 
 new_content = []
 
@@ -77,36 +77,6 @@ def unwrapContent(var1, var2, length=0x1c):
         new_content.append(
             content[i] ^ tmp_buf[(var2_hdr + var1_hdr) & 0xff]
         )
-
-        """"
-        (asdf,) = struct.unpack_from("i", tmp_buf, 0x100)
-        iVar4 = asdf + 1
-        asdf = struct.pack("i", iVar4 >> 0x1f)
-        (asdf,) = struct.unpack("I", asdf)
-        uVar3 = asdf >> 0x18
-        iVar6 = ((iVar4 + uVar3) & 0xff) - uVar3
-        struct.pack_into("i", tmp_buf, 0x100, iVar6)
-
-        bVar1 = tmp_buf[iVar6]
-        (asdf,) = struct.unpack_from("i", tmp_buf, 0x104)
-        iVar4 = bVar1 + asdf
-        asdf = struct.pack("i", iVar4 >> 0x1f)
-        (asdf,) = struct.unpack("I", asdf)
-        uVar3 = asdf >> 0x18
-        iVar4 = ((iVar4 + uVar3) & 0xFF) - uVar3
-        struct.pack_into("i", tmp_buf, 0x104, iVar4)
-
-        # asdf = struct.pack("i", iVar4)
-        # (asdf,) = struct.unpack("l", asdf)
-        lVar5 = iVar4
-        cVar2 = tmp_buf[lVar5]
-        tmp_buf[lVar5] = bVar1
-        tmp_buf[iVar6] = cVar2
-
-        value_x = content[i] ^ \
-                  tmp_buf[cVar2 + tmp_buf[lVar5]]
-        new_content.append(value_x)
-        """
 
 
 unwrapContent(var1, var2)
