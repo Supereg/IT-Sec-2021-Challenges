@@ -1,0 +1,107 @@
+00000000: 1c5c 70fe bfb8 77e5 9e2d 91e2 74ac bda1  .\p...w..-..t...
+00000010: a7e1 011e 2ef2 adb2 813f 7c9e 3bf3 9d29  .........?|.;..)
+00000020: 0bee 9ec0 62c4 2bc1 9857 0bf4 cde5 91f4  ....b.+..W......
+00000030: 5b45 101b ed8f b1c7 30d0 657a 41db 1cf2  [E......0.ezA...
+00000040: de1b 9588 62e4 e25e 1ba7 defa            ....b..^....
+
+
+file has seemingly three parts
+
+first 32 bytes are some header
+28 bytes are file content
+
+16 bytes are md5 hash over content
+
+HEADER:
+00000000: 1c5c 70fe bfb8 77e5 9e2d 91e2 74ac bda1  .\p...w..-..t...
+00000010: a7e1 011e 2ef2 adb2 813f 7c9e 3bf3 9d29  .........?|.;..)
+
+CONTENT: // struct SavedData
+00000020: 0bee 9ec0 62c4 2bc1 9857 0bf4 cde5 91f4  ....b.+..W......
+00000030: 5b45 101b ed8f b1c7 30d0 657a xxxx xxxx  [E......0.ezA...
+
+mana = 0bee 9ec0
+maxMana = 62c4 2bc1
+health = 9857 9bf4
+gold = cde5 91f4
+maxHealth = 5b45 101b
+attackStat = ed8f b1c7
+manaRegen = 30d0 657a
+
+MD5:
+00000030: xxxx xxxx xxxx xxxx xxxx xxxx 41db 1cf2  [E......0.ezA...
+00000040: de1b 9588 62e4 e25e 1ba7 defa            ....b..^....
+
+
+FILE * LoadGame(char *fileName)
+
+{
+  int hashResult;
+  FILE *__stream;
+  FILE *fileContent;
+  long in_FS_OFFSET;
+  MD5_CTX md5_ctx;
+  undefined local_188 [272];
+  undefined expectedHash [16];
+  uchar computedHash [16];
+  undefined fileHeader [40];
+  long stack_cookie;
+
+  stack_cookie = *(long *)(in_FS_OFFSET + 0x28);
+  printf("itsec-savefiles: Loading game from %s\n",fileName);
+  __stream = fopen(fileName,"rb");
+  if (__stream == (FILE *)0x0) {
+    fprintf(stderr,"Unable to load save file: %s\n",fileName);
+  }
+  else {
+    fileContent = (FILE *)malloc(0x1c);
+    fread(fileHeader,1,0x20,__stream);
+    fread(fileContent,1,0x1c,__stream);
+    fread(expectedHash,1,0x10,__stream);
+    fclose(__stream);
+    parsedFileHeader(local_188,fileHeader,0x20);
+    parseFileContent(local_188,fileContent,0x1c);
+    MD5_Init(&md5_ctx);
+    MD5_Update(&md5_ctx,fileContent,0x1c);
+    MD5_Final(computedHash,&md5_ctx);
+    hashResult = memcmp(computedHash,expectedHash,0x10);
+    __stream = fileContent;
+    if (hashResult != 0) {
+      puts("itsec-savefiles: Invalid save file!");
+      __stream = (FILE *)0x0;
+    }
+  }
+  if (stack_cookie == *(long *)(in_FS_OFFSET + 0x28)) {
+    return __stream;
+  }
+                    /* WARNING: Subroutine does not return */
+  __stack_chk_fail();
+}
+
+
+void parsedFileHeader(long param_1,long fileHeader,ulong length_0x20)
+
+{
+  uint last_j;
+  long i;
+  ulong j;
+  byte value;
+
+  i = 0;
+  do {
+    *(char *)(param_1 + i) = (char)i;
+    i = i + 1;
+  } while (i != 0x100);
+  j = 0;
+  last_j = 0;
+  do {
+    value = *(byte *)(param_1 + j);
+    last_j = (uint)*(byte *)(fileHeader + j % length_0x20) + value + last_j & 0xff;
+    *(undefined *)(param_1 + j) = *(undefined *)(param_1 + (int)last_j);
+    *(byte *)(param_1 + (int)last_j) = value;
+    j = j + 1;
+  } while (j != 0x100);
+  *(undefined4 *)(param_1 + 0x104) = 0;
+  *(undefined4 *)(param_1 + 0x100) = 0;
+  return;
+}

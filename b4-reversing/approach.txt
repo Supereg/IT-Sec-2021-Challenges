@@ -1,0 +1,26 @@
+So, to our approach. We know we need to get to level 1337 for the flag. Meaning
+we need to somehow manipulate the level counter. Also, we have the hint from b6
+"Der Gold-Zähler wird von unserer Anti-Cheat-Software abgesichert, sodass der Ansatz aus Aufgabe #b4 nicht mehr funktioniert.".
+
+Our approach must be to somehow find the level counter in memory, manipulate it and then somehow get the flag.
+The problem description proposes to use a tool like GameConqueror. I complete ignored that, because I don't know that tool.
+Instead, following my intuition I used the well known tool "Cheat Engine". It allows use to scan for changing values
+to uncover the level counter.
+
+Approach was like follows.
+We somehow can rush through level 1 and reach level 2 easily. I always died in level 2 though :(.
+So we can control the level counter value to be either 1 or 2.
+So this is what I did. Go into the dungeon, search for any ints with a value of `1` with Cheat Engine.
+Reach level 2, and we can filter our previous search results for values which are now `2`.
+Then we die (because we deliberately do so and not because we are bad or so). Go back to the dungeon and
+repeat the Cheat Engine process filtering for `1` again. We repeat this step until there is only one memory address left.
+We now try to overwrite this memory address, and viola we can control the level counter in the game.
+
+Now to actually get to the flag we do the following:
+1. Enter level 1
+2. Pause and set the address to `1336` (it increments to 1337 once we reach the next level)
+3. Rush trough level 1 to the exit
+4. Now we are in level 1337, somehow - with a lot of trial and error - kill the mobs using those explosion-slimy mobs.
+5. Press E on the chest and receive the flag :)
+
+I needed several tires because not dying is actually not that easy :)
