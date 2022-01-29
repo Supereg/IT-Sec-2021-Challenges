@@ -34,7 +34,6 @@ MD5:
 
 
 FILE * LoadGame(char *fileName)
-
 {
   int hashResult;
   FILE *__stream;
